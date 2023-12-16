@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { RNCamera } from 'react-native-camera';
-import PropTypes from 'prop-types'; // Import PropTypes from 'prop-types'
+import PropTypes from 'prop-types';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
@@ -63,8 +63,8 @@ const ScannerScreen = ({ navigation }) => {
 // PropTypes for ScannerScreen component
 ScannerScreen.propTypes = {
   navigation: PropTypes.object.isRequired,
+  style: View.propTypes.style, // Apply View.propTypes.style
 };
-
 
 const styles = StyleSheet.create({
   container: {
