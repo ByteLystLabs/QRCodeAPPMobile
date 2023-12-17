@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { RNCamera } from 'react-native-camera';
-import PropTypes from 'prop-types';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { RNCamera, BarCodeReadEvent } from 'react-native-camera';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import PropTypes from 'prop-types';
 
 const Stack = createStackNavigator();
 
@@ -18,52 +18,79 @@ const App = () => {
   );
 };
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = ({ route }) => {
+  const { scannedData } = route.params || {};
+  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}>QR Code Scanner App</Text>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate('Scanner')}
-      >
-        <Text style={styles.buttonText}>Scan New Item</Text>
-      </TouchableOpacity>
+      {scannedData ? (
+        <View style={styles.overlay}>
+          <Text style={styles.overlayText}>Scanned Data: {scannedData}</Text>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate('Scanner')}
+          >
+            <Text style={styles.buttonText}>Scan New Item</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('Scanner')}
+        >
+          <Text style={styles.buttonText}>Scan New Item</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
 
-const ScannerScreen = ({ navigation }) => {
-  const [scannedData, setScannedData] = useState(null);
+const ScannerScreen = () => {
+  const [scannedData, setScannedData] = useState<string | null>(null);
+  const navigation = useNavigation();
 
-  const onBarCodeRead = (result) => {
-    Alert(result);
-    if (result.data) {
-      setScannedData(result.data);
-      navigation.navigate('Home');
+  const onBarCodeRead = (event: BarCodeReadEvent) => {
+    console.log('Barcode Read:', event.data);
+    if (event.data) {
+      setScannedData(event.data);
     }
   };
 
+  useEffect(() => {
+    if (scannedData) {
+      navigation.navigate('Home', { scannedData });
+    }
+  }, [scannedData, navigation]);
+
   return (
-    <View style={styles.container}>
-      <RNCamera
-        style={styles.camera}
-        type={RNCamera.Constants.Type.back}
-        onBarCodeRead={onBarCodeRead}
-        captureAudio={false}
-      />
+    <View style={styles.fullContainer}>
+      {!scannedData && (
+        <RNCamera
+          style={styles.fullCamera}
+          type={RNCamera.Constants.Type.front}
+          onBarCodeRead={onBarCodeRead}
+          captureAudio={false}
+        />
+      )}
       {scannedData && (
         <View style={styles.overlay}>
           <Text style={styles.overlayText}>Scanned Data: {scannedData}</Text>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => navigation.navigate('Home')}
+          >
+            <Text style={styles.buttonText}>Go Back</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
   );
 };
 
-// PropTypes for ScannerScreen component
-ScannerScreen.propTypes = {
-  navigation: PropTypes.object.isRequired,
-  style: View.propTypes.style, // Apply View.propTypes.style
+HomeScreen.propTypes = {
+  route: PropTypes.object.isRequired,
 };
 
 const styles = StyleSheet.create({
@@ -71,6 +98,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  fullContainer: {
+    flex: 1,
   },
   header: {
     fontSize: 24,
@@ -80,24 +111,21 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: 'blue',
     borderRadius: 5,
+    marginTop: 20,
   },
   buttonText: {
     color: 'white',
     fontSize: 18,
   },
-  camera: {
+  fullCamera: {
     flex: 1,
     width: '100%',
   },
   overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'black',
   },
   overlayText: {
     color: 'white',
